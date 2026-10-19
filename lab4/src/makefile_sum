@@ -1,0 +1,22 @@
+CC=gcc
+CFLAGS=-I. -Wall
+LDFLAGS=-lpthread
+
+.PHONY: all clean
+
+all: parallel_sum
+
+libsum.a: sum.o
+	ar rcs libsum.a sum.o
+
+sum.o: sum.c sum.h
+	$(CC) -c sum.c -o sum.o $(CFLAGS)
+
+utils.o: utils.c utils.h
+	$(CC) -c utils.c -o utils.o $(CFLAGS)
+
+parallel_sum: parallel_sum.c libsum.a utils.o
+	$(CC) -o parallel_sum parallel_sum.c libsum.a utils.o $(CFLAGS) $(LDFLAGS)
+
+clean:
+	rm -f *.o *.a parallel_sum
