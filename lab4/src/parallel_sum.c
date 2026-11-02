@@ -10,17 +10,22 @@
 #include "utils.h"
 #include "sum.h"
 
+
+//структура для передачи данных
 struct SumArgs {
   int *array;
   int begin;
   int end;
 };
 
+//функция потока
 void *ThreadSum(void *args) {
   struct SumArgs *sum_args = (struct SumArgs *)args;
   long long *result = malloc(sizeof(long long));
+  //функция из библиотеки
   *result = CalculateSum(sum_args->array, sum_args->begin, sum_args->end);
   return (void *)result;
+  //поток берет часть массива, считает сумму и передает результат
 }
 
 int main(int argc, char **argv) {
@@ -55,18 +60,19 @@ int main(int argc, char **argv) {
   }
 
   int *array = malloc(sizeof(int) * array_size);
-  GenerateArray(array, array_size, seed);
+  GenerateArray(array, array_size, seed);//генерация
 
   pthread_t *threads = malloc(sizeof(pthread_t) * threads_num);
   struct SumArgs *args = malloc(sizeof(struct SumArgs) * threads_num);
 
   struct timeval start_time, finish_time;
-  gettimeofday(&start_time, NULL);
+  gettimeofday(&start_time, NULL); //вкл таймер
 
   for (uint32_t i = 0; i < threads_num; i++) {
     args[i].array = array;
     args[i].begin = i * array_size / threads_num;
     args[i].end = (i + 1) * array_size / threads_num;
+    // создаем поток, передаем ему функцию threadssim и аргументы
     if (pthread_create(&threads[i], NULL, ThreadSum, (void *)&args[i])) {
       printf("Error: pthread_create failed!\n");
       return 1;
@@ -76,12 +82,12 @@ int main(int argc, char **argv) {
   long long total_sum = 0;
   for (uint32_t i = 0; i < threads_num; i++) {
     void *result;
-    pthread_join(threads[i], &result);
-    total_sum += *(long long *)result;
+    pthread_join(threads[i], &result);  //ждем поток i
+    total_sum += *(long long *)result; //ссумируем результаты
     free(result);
   }
 
-  gettimeofday(&finish_time, NULL);
+  gettimeofday(&finish_time, NULL); // выкл таймер
   double elapsed_time = (finish_time.tv_sec - start_time.tv_sec) * 1000.0;
   elapsed_time += (finish_time.tv_usec - start_time.tv_usec) / 1000.0;
 

@@ -13,9 +13,13 @@
 #include "find_min_max.h"
 #include "utils.h"
 
+
+// глобальные переменные (для функции обработчика сигнала имела к ним доступ)
 pid_t *child_pids;
 int pnum_global;
 
+
+//функция убийца 
 void timeout_handler(int sig) {
     (void)sig;
     for (int i = 0; i < pnum_global; i++) {
@@ -45,7 +49,7 @@ int main(int argc, char **argv) {
           case 0: seed = atoi(optarg); break;
           case 1: array_size = atoi(optarg); break;
           case 2: pnum = atoi(optarg); break;
-          case 3: timeout = atoi(optarg); break;
+          case 3: timeout = atoi(optarg); break;  //ловим аргумент time-out
         }
         break;
       case 'f': with_files = true; break;
@@ -53,12 +57,13 @@ int main(int argc, char **argv) {
   }
 
   if (seed == -1 || array_size == -1 || pnum == -1) return 1;
-
+  //выделение памяти для массива child_pids
   int *array = malloc(sizeof(int) * array_size);
   GenerateArray(array, array_size, seed);
   child_pids = malloc(sizeof(pid_t) * pnum);
   pnum_global = pnum;
 
+  настройка будильника 
   if (timeout > 0) {
     signal(SIGALRM, timeout_handler);
     alarm(timeout);
@@ -74,6 +79,8 @@ int main(int argc, char **argv) {
     for (int i = 0; i < pnum; i++) pipe(pipes[i]);
   }
 
+
+  // рождение детей 
   for (int i = 0; i < pnum; i++) {
     pid_t child_pid = fork();
     if (child_pid >= 0) {
@@ -97,6 +104,7 @@ int main(int argc, char **argv) {
         }
         return 0;
       }
+      // родитель запоминает pid ребенка, чтобы знать, кого убить
       child_pids[i] = child_pid;
       if (!with_files) close(pipes[i][1]);
     }
@@ -104,9 +112,10 @@ int main(int argc, char **argv) {
 
   while (active_child_processes > 0) {
     int status;
+    // проверка состояния детей и сразу возврат, без блокировки
     pid_t pid = waitpid(-1, &status, WNOHANG);
-    if (pid > 0) active_child_processes -= 1;
-    else if (pid == 0) usleep(10000);
+    if (pid > 0) active_child_processes -= 1;  // если умер - выходим
+    else if (pid == 0) usleep(10000); // если все живы, ждем еще немного
   }
 
   struct MinMax min_max;

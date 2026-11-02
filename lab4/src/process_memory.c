@@ -7,11 +7,17 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-/* Below is a macro definition */
+/* Below is a macro definition */  //макрос, принимает id переменной и ее саму
+//выводит это
 #define SHW_ADR(ID, I) (printf("ID %s \t is at virtual address: %8X\n", ID, &I))
 
 extern int etext, edata, end; /* Global variables for process
                                  memory */
+                                 //переменные, которые линковщик во время линковки
+                                 // сам подставляет на их место нужные адреса 
+
+// в глобальных переменных глобальный указатель (значение - строка), иниц. данных
+//глобальный массив (заполнится нулями), сегмент неинизиализированных данных,
 
 char *cptr = "This message is output by the function showit()\n"; /* Static */
 char buffer1[25];
@@ -30,8 +36,8 @@ main() {
   SHW_ADR("cptr", cptr);
   SHW_ADR("buffer1", buffer1);
   SHW_ADR("i", i);
-  strcpy(buffer1, "A demonstration\n");   /* Library function */
-  write(1, buffer1, strlen(buffer1) + 1); /* System call */
+  strcpy(buffer1, "A demonstration\n");   /* Library function */ //копир
+  write(1, buffer1, strlen(buffer1) + 1); /* System call */   //низкоур print
   showit(cptr);
 
 } /* end of main function */
@@ -39,10 +45,12 @@ main() {
 /* A function follows */
 int showit(p) char *p;
 {
-  char *buffer2;
+  char *buffer2; 
   SHW_ADR("buffer2", buffer2);
+  //здесь создается куча
   if ((buffer2 = (char *)malloc((unsigned)(strlen(p) + 1))) != NULL) {
     printf("Alocated memory at %X\n", buffer2);
+    //копируем строку в выделенную память и очищаем
     strcpy(buffer2, p);    /* copy the string */
     printf("%s", buffer2); /* Didplay the string */
     free(buffer2);         /* Release location */
