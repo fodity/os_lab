@@ -7,17 +7,25 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define BUFSIZE 100
 #define SADDR struct sockaddr
 #define SIZE sizeof(struct sockaddr_in)
 
 int main(int argc, char *argv[]) {
   int fd;
   int nread;
-  char buf[BUFSIZE];
   struct sockaddr_in servaddr;
-  if (argc < 3) {
-    printf("Too few arguments \n");
+
+  // проверяем, что передали 3 аргумента
+  if (argc < 4) {
+    printf("Usage: %s <ip> <port> <bufsize>\n", argv[0]);
+    exit(1);
+  }
+
+  // выделяем память под буффер
+  int bufsize = atoi(argv[3]);
+  char *buf = malloc(bufsize);
+  if (!buf) {
+    perror("malloc");
     exit(1);
   }
 
@@ -25,24 +33,34 @@ int main(int argc, char *argv[]) {
     perror("socket creating");
     exit(1);
   }
+  
 
+  //заполняем структуру адреса
   memset(&servaddr, 0, SIZE);
   servaddr.sin_family = AF_INET;
 
+  // argv[1] - это айпи
   if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
     perror("bad address");
     exit(1);
   }
 
+  // argv[2] - это порт 
   servaddr.sin_port = htons(atoi(argv[2]));
+  
 
+  //подключиться к серваку
   if (connect(fd, (SADDR *)&servaddr, SIZE) < 0) {
     perror("connect");
     exit(1);
   }
+  
 
-  write(1, "Input message to send\n", 22);
-  while ((nread = read(0, buf, BUFSIZE)) > 0) {
+  //цикл отправки сообещний
+  (void)write(1, "Input message to send\n", 22);
+  
+  // читаем с клавы и шлем в сокет
+  while ((nread = read(0, buf, bufsize)) > 0) {
     if (write(fd, buf, nread) < 0) {
       perror("write");
       exit(1);
@@ -50,5 +68,6 @@ int main(int argc, char *argv[]) {
   }
 
   close(fd);
+  free(buf);
   exit(0);
 }
